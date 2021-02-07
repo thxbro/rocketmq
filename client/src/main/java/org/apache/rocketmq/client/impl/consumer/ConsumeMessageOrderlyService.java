@@ -258,7 +258,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
             }
         }, timeMillis, TimeUnit.MILLISECONDS);
     }
-
+    //消费消息的过程
     public boolean processConsumeResult(
         final List<MessageExt> msgs,
         final ConsumeOrderlyStatus status,
@@ -363,7 +363,7 @@ public class ConsumeMessageOrderlyService implements ConsumeMessageService {
         }
         return suspend;
     }
-
+    //消费成功 返回结果
     public boolean sendMessageBack(final MessageExt msg) {
         try {
             // max reconsume times exceeded then send to dead letter queue.

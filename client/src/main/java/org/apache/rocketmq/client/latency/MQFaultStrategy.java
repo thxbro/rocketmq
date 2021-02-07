@@ -24,11 +24,14 @@ import org.apache.rocketmq.common.message.MessageQueue;
 
 public class MQFaultStrategy {
     private final static InternalLogger log = ClientLogger.getLog();
+    //延迟故障容错，维护每个Broker的发送消息的延迟
+    // key：brokerName
     private final LatencyFaultTolerance<String> latencyFaultTolerance = new LatencyFaultToleranceImpl();
-
+    //发送消息延迟容错开关
     private boolean sendLatencyFaultEnable = false;
-
+    //延迟级别数组
     private long[] latencyMax = {50L, 100L, 550L, 1000L, 2000L, 3000L, 15000L};
+    //不可用时长数组
     private long[] notAvailableDuration = {0L, 0L, 30000L, 60000L, 120000L, 180000L, 600000L};
 
     public long[] getNotAvailableDuration() {
@@ -55,7 +58,13 @@ public class MQFaultStrategy {
         this.sendLatencyFaultEnable = sendLatencyFaultEnable;
     }
 
+    /**
+     * <p>  根据 Topic发布信息 选择一个消息队列
+     *
+     * @since 2021/2/7 15:15
+     **/
     public MessageQueue selectOneMessageQueue(final TopicPublishInfo tpInfo, final String lastBrokerName) {
+        //开启Producer延迟容错逻辑
         if (this.sendLatencyFaultEnable) {
             try {
                 int index = tpInfo.getSendWhichQueue().getAndIncrement();
@@ -86,7 +95,7 @@ public class MQFaultStrategy {
 
             return tpInfo.selectOneMessageQueue();
         }
-
+        //随机数+1 % queue集合大小
         return tpInfo.selectOneMessageQueue(lastBrokerName);
     }
 

@@ -39,7 +39,10 @@ import org.apache.rocketmq.common.protocol.body.UnlockBatchRequestBody;
 import org.apache.rocketmq.common.protocol.heartbeat.ConsumeType;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
-
+/**
+ * <p> Consumer端实现负载均衡的核心类
+ *
+ **/
 public abstract class RebalanceImpl {
     protected static final InternalLogger log = ClientLogger.getLog();
     protected final ConcurrentMap<MessageQueue, ProcessQueue> processQueueTable = new ConcurrentHashMap<MessageQueue, ProcessQueue>(64);
@@ -235,6 +238,7 @@ public abstract class RebalanceImpl {
         return subscriptionInner;
     }
 
+    //实现Consumer端负载均衡的核心
     private void rebalanceByTopic(final String topic, final boolean isOrder) {
         switch (messageModel) {
             case BROADCASTING: {
@@ -255,7 +259,10 @@ public abstract class RebalanceImpl {
                 break;
             }
             case CLUSTERING: {
+                //获取该Topic主题下的消息消费队列集合（mqSet）
                 Set<MessageQueue> mqSet = this.topicSubscribeInfoTable.get(topic);
+                //向Broker端发送获取该消费组下消费者Id列表的RPC通信请求
+                //（Broker端基于前面Consumer端上报的心跳包数据而构建的consumerTable做出响应返回，业务请求码：GET_CONSUMER_LIST_BY_GROUP）
                 List<String> cidAll = this.mQClientFactory.findConsumerIdList(topic, consumerGroup);
                 if (null == mqSet) {
                     if (!topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {

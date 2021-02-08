@@ -59,7 +59,15 @@ public class MQFaultStrategy {
     }
 
     /**
-     * <p>  根据 Topic发布信息 选择一个消息队列
+     * <p>  Producer的负载均衡
+     *    从TopicPublicInfo路由信息 选择一个消息队列
+     *    这里有一个sendLatencyFaultEnable开关变量，
+     *    如果开启，在随机递增取模的基础上，再过滤掉not available的Broker代理。
+     *    所谓的”latencyFaultTolerance”，是指对之前失败的，按一定的时间做退避。
+     *    例如，如果上次请求的latency超过550Lms，就退避3000Lms；超过1000L，就退避60000L；
+     *
+     *    如果关闭，采用随机递增取模的方式选择一个队列（MessageQueue）来发送消息，
+     *    latencyFaultTolerance机制是实现消息发送高可用的核心关键所在。
      *
      * @since 2021/2/7 15:15
      **/

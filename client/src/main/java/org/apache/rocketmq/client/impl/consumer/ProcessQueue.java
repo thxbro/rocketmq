@@ -128,7 +128,7 @@ public class ProcessQueue {
             }
         }
     }
-
+    //把broker拉回来的消息 进行属性初始化
     public boolean putMessage(final List<MessageExt> msgs) {
         boolean dispatchToConsume = false;
         try {
@@ -149,7 +149,7 @@ public class ProcessQueue {
                     dispatchToConsume = true;
                     this.consuming = true;
                 }
-
+                //计算还有多少个没有被消费
                 if (!msgs.isEmpty()) {
                     MessageExt messageExt = msgs.get(msgs.size() - 1);
                     String property = messageExt.getProperty(MessageConst.PROPERTY_MAX_OFFSET);
@@ -186,7 +186,7 @@ public class ProcessQueue {
 
         return 0;
     }
-
+    //消费成功 和清理过期消息时调用
     public long removeMessage(final List<MessageExt> msgs) {
         long result = -1;
         final long now = System.currentTimeMillis();

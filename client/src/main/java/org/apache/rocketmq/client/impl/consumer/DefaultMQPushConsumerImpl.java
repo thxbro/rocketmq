@@ -78,7 +78,13 @@ import org.apache.rocketmq.common.sysflag.PullSysFlag;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.remoting.exception.RemotingException;
-
+/**
+ * <p> 在Push模式只是对pull模式的一种封装
+ *     其本质实现为消息拉取线程在从服务器拉取到一批消息后，
+ *    然后提交到消息消费线程池后，又“马不停蹄”的继续向服务器再次尝试拉取消息。
+ *    如果未拉取到消息，则延迟一下又继续拉取。
+ *
+ **/
 public class DefaultMQPushConsumerImpl implements MQConsumerInner {
     /**
      * Delay some time when exception occur
@@ -325,7 +331,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 
                                 DefaultMQPushConsumerImpl.this.getConsumerStatsManager().incPullTPS(pullRequest.getConsumerGroup(),
                                     pullRequest.getMessageQueue().getTopic(), pullResult.getMsgFoundList().size());
-
+                                //把broker拉回来的消息 进行属性初始化
                                 boolean dispatchToConsume = processQueue.putMessage(pullResult.getMsgFoundList());
                                 DefaultMQPushConsumerImpl.this.consumeMessageService.submitConsumeRequest(
                                     pullResult.getMsgFoundList(),
@@ -584,12 +590,12 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
                 }
                 //mqClientFactory 就是与broker建立连接的工厂
                 this.mQClientFactory = MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQPushConsumer, this.rpcHook);
-                //重新负载属性（基于客户端的负载配置 所以在客户端配置消费者集群时配置需要一模一样）
+                //负载均衡属性（基于客户端的负载配置 所以在客户端配置消费者集群时配置需要一模一样）
                 this.rebalanceImpl.setConsumerGroup(this.defaultMQPushConsumer.getConsumerGroup());
                 this.rebalanceImpl.setMessageModel(this.defaultMQPushConsumer.getMessageModel());
                 this.rebalanceImpl.setAllocateMessageQueueStrategy(this.defaultMQPushConsumer.getAllocateMessageQueueStrategy());
                 this.rebalanceImpl.setmQClientFactory(this.mQClientFactory);
-                //pull模型的包装器
+                // 此处为pull模型的包装器
                 this.pullAPIWrapper = new PullAPIWrapper(
                     mQClientFactory,
                     this.defaultMQPushConsumer.getConsumerGroup(), isUnitMode());

@@ -24,11 +24,14 @@ import java.util.Map;
 
 public class Message implements Serializable {
     private static final long serialVersionUID = 8445773977080406428L;
-
+    //主题名字，可以通过RocketMQ Console创建 一般架构组提前创建好
     private String topic;
     private int flag;
+    //消息扩展信息
     private Map<String, String> properties;
+    // 消息体，字节数组。需要注意生产者使用什么编码，消费者也必须使用相同编码解码，否则会产生乱码。
     private byte[] body;
+
     private String transactionId;
 
     public Message() {
@@ -77,7 +80,7 @@ public class Message implements Serializable {
             this.properties.remove(name);
         }
     }
-
+    //用户自定义信息
     public void putUserProperty(final String name, final String value) {
         if (MessageConst.STRING_HASH_SET.contains(name)) {
             throw new RuntimeException(String.format(

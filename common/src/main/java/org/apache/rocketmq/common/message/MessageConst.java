@@ -19,9 +19,12 @@ package org.apache.rocketmq.common.message;
 import java.util.HashSet;
 
 public class MessageConst {
+    //消息次级分类
     public static final String PROPERTY_KEYS = "KEYS";
+    //用作过滤消息 用户可以订阅某个Topic的某些Tag，这样Broker只会把订阅了topic-tag的消息发送给消费者
     public static final String PROPERTY_TAGS = "TAGS";
     public static final String PROPERTY_WAIT_STORE_MSG_OK = "WAIT";
+    //设置延迟级别
     public static final String PROPERTY_DELAY_TIME_LEVEL = "DELAY";
     public static final String PROPERTY_RETRY_TOPIC = "RETRY_TOPIC";
     public static final String PROPERTY_REAL_TOPIC = "REAL_TOPIC";

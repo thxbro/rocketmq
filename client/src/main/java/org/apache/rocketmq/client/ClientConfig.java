@@ -34,9 +34,17 @@ import org.apache.rocketmq.remoting.protocol.LanguageCode;
  */
 public class ClientConfig {
     public static final String SEND_MESSAGE_WITH_VIP_CHANNEL_PROPERTY = "com.rocketmq.sendMessageWithVIPChannel";
+    //继承自 ClientConfig，表示 RocketMQ 集群的 Namesrv 地址，
+    // 如果是多个则用分号分开。比如：127.0.0.1：9876；127.0.0.2：9876。
     private String namesrvAddr = NameServerAddressUtils.getNameServerAddresses();
+    //使用的客户端程序所在机器的 IP地址。支持 IPv4和 IPv6，
+    // IPv4 排除了本地的环回地址（127.0.xxx.xxx）和私有内网地址（192.168.xxx.xxx）。
+    // 这里需要注意的是，如果 Client 运行在 Docker 容器中，获取的 IP 地址是容器所在的 IP地址，而非宿主机的IP地址。
     private String clientIP = RemotingUtil.getLocalAddress();
+    //实例名 每个实例都需要取唯一的名字，
+    // 因为有时我们会在同一个机器上部署多个程序进程，如果名字有重复就会导致启动失败
     private String instanceName = System.getProperty("rocketmq.client.name", "DEFAULT");
+
     private int clientCallbackExecutorThreads = Runtime.getRuntime().availableProcessors();
     protected String namespace;
     protected AccessChannel accessChannel = AccessChannel.LOCAL;
@@ -56,6 +64,7 @@ public class ClientConfig {
     private long pullTimeDelayMillsWhenException = 1000;
     private boolean unitMode = false;
     private String unitName;
+    //VIP 通道和非VIP通道的区别是：在通信过程中使用的端口号不同。
     private boolean vipChannelEnabled = Boolean.parseBoolean(System.getProperty(SEND_MESSAGE_WITH_VIP_CHANNEL_PROPERTY, "false"));
 
     private boolean useTLS = TlsSystemConfig.tlsEnable;

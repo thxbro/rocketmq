@@ -91,12 +91,18 @@ public class MQClientInstance {
     private final int instanceIndex;
     private final String clientId;
     private final long bootTimestamp = System.currentTimeMillis();
+    //当前client实例的全部生产者的内部实例
     private final ConcurrentMap<String/* group */, MQProducerInner> producerTable = new ConcurrentHashMap<String, MQProducerInner>();
+    //当前client实例的全部消费者的内部实例。
     private final ConcurrentMap<String/* group */, MQConsumerInner> consumerTable = new ConcurrentHashMap<String, MQConsumerInner>();
+    //当前client实例的全部管理实例
     private final ConcurrentMap<String/* group */, MQAdminExtInner> adminExtTable = new ConcurrentHashMap<String, MQAdminExtInner>();
     private final NettyClientConfig nettyClientConfig;
+    //其实每个client也是一个Netty Server，也会支持Broker访问，这里实现了全部client支持的接口。
     private final MQClientAPIImpl mQClientAPIImpl;
+    //管理接口的本地实现类
     private final MQAdminImpl mQAdminImpl;
+    //当前生产者、消费者中全部Topic的本地缓存路由信息
     private final ConcurrentMap<String/* Topic */, TopicRouteData> topicRouteTable = new ConcurrentHashMap<String, TopicRouteData>();
     private final Lock lockNamesrv = new ReentrantLock();
     private final Lock lockHeartbeat = new ReentrantLock();
@@ -104,16 +110,27 @@ public class MQClientInstance {
         new ConcurrentHashMap<String, HashMap<Long, String>>();
     private final ConcurrentMap<String/* Broker Name */, HashMap<String/* address */, Integer>> brokerVersionTable =
         new ConcurrentHashMap<String, HashMap<String, Integer>>();
+    //本地定时任务
+    //- 定期获取当前Namesrv地址
+    //- 定期同步Namesrv信息
+    //- 定期更新Topic路由信息
+    //- 定期发送心跳信息给Broker
+    //- 定期清理已下线的Broker
+    //- 定期持久化消费位点,定期调整消费线程数(部分源代码被官方删除)
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
             return new Thread(r, "MQClientFactoryScheduledThread");
         }
     });
+    //请求的处理器
     private final ClientRemotingProcessor clientRemotingProcessor;
+    //通过变量isStopped来控制 生产者实际未使用
     private final PullMessageService pullMessageService;
+    //TODO
     private final RebalanceService rebalanceService;
     private final DefaultMQProducer defaultMQProducer;
+    //消费监控 比如拉取RT（ResponseTime，响应时间）、拉取TPS（Transactions Per Second，每秒处理消息数）、消费RT等都可以统计。
     private final ConsumerStatsManager consumerStatsManager;
     private final AtomicLong sendHeartbeatTimesTotal = new AtomicLong(0);
     private ServiceState serviceState = ServiceState.CREATE_JUST;
@@ -236,6 +253,7 @@ public class MQClientInstance {
                     // Start various schedule tasks
                     this.startScheduledTask();
                     // Start pull service
+                    //这里为什么会启动用于消费的Pull服务呢？这是一个兼容写法。
                     this.pullMessageService.start();
                     // Start rebalance service
                     this.rebalanceService.start();
@@ -321,6 +339,7 @@ public class MQClientInstance {
         return clientId;
     }
 
+    //从多个Namesrv中获取最新Topic路由信息，更新本地缓存
     public void updateTopicRouteInfoFromNameServer() {
         Set<String> topicList = new HashSet<String>();
 
@@ -989,6 +1008,10 @@ public class MQClientInstance {
         return this.consumerTable.get(group);
     }
 
+    /*
+     * <p> 在本地缓存中查找Master或者SlaveBroker信息。
+     * @since 2021/2/9 15:07
+     **/
     public FindBrokerResult findBrokerAddressInAdmin(final String brokerName) {
         String brokerAddr = null;
         boolean slave = false;
@@ -1019,6 +1042,10 @@ public class MQClientInstance {
         return null;
     }
 
+    /*
+     * <p> 在本地缓存中查找Master Broker地址
+     * @since 2021/2/9 15:07
+     **/
     public String findBrokerAddressInPublish(final String brokerName) {
         HashMap<Long/* brokerId */, String/* address */> map = this.brokerAddrTable.get(brokerName);
         if (map != null && !map.isEmpty()) {
@@ -1028,6 +1055,11 @@ public class MQClientInstance {
         return null;
     }
 
+    /**
+     * <p> 在本地缓存中查找Slave Broker信息。
+     *
+     * @since 2021/2/9 15:08
+     **/
     public FindBrokerResult findBrokerAddressInSubscribe(
         final String brokerName,
         final long brokerId,
